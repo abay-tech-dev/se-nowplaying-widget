@@ -1,0 +1,198 @@
+/* ── Reset ─────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Widget principal ──────────────────────────────── */
+.widget {
+  /* Taille par défaut — remplacée dynamiquement via JS */
+  width: 800px;
+  height: 200px;
+
+  position: relative;
+  border-radius: 40px;
+  overflow: hidden;
+
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  color: #fff;
+
+  background: #181818;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+
+  /* Animation d'entrée / sortie */
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.widget.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+}
+.widget.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* ── Fond flouté ───────────────────────────────────── */
+.widget__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-size: cover;
+  background-position: center;
+  filter: blur(15px) brightness(0.35);
+  transition: background-image 0.8s ease;
+}
+.widget__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* ── Contenu ───────────────────────────────────────── */
+.widget__content {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 34px;
+  gap: 20px;
+}
+
+/* ── Emote ─────────────────────────────────────────── */
+.widget__emote {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  /* Caché si pas d'emote configuré */
+  display: none;
+}
+.widget__emote.active {
+  display: block;
+}
+
+/* ── Barres audio ──────────────────────────────────── */
+.widget__bars {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 28px;
+}
+.bar {
+  display: block;
+  width: 4px;
+  /* Couleur accent — remplacée via JS */
+  background: var(--accent, #1db954);
+  border-radius: 2px;
+}
+.bar1 { animation: bar1 0.8s ease-in-out infinite; }
+.bar2 { animation: bar2 0.8s ease-in-out infinite 0.15s; }
+.bar3 { animation: bar3 0.8s ease-in-out infinite 0.30s; }
+.bar4 { animation: bar4 0.8s ease-in-out infinite 0.45s; }
+
+@keyframes bar1 { 0%,100%{height:5px}  50%{height:22px} }
+@keyframes bar2 { 0%,100%{height:14px} 50%{height:5px}  }
+@keyframes bar3 { 0%,100%{height:9px}  50%{height:24px} }
+@keyframes bar4 { 0%,100%{height:20px} 50%{height:7px}  }
+
+/* ── Pochette ──────────────────────────────────────── */
+.widget__cover-wrap {
+  flex-shrink: 0;
+}
+.widget__cover {
+  width: 130px;
+  height: 130px;
+  border-radius: 16px;
+  object-fit: cover;
+  display: block;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.55);
+  transition: opacity 0.4s ease;
+}
+
+/* ── Infos piste ───────────────────────────────────── */
+.widget__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+
+/* Conteneur pour le défilement */
+.scroll-wrap {
+  overflow: hidden;
+  width: 100%;
+}
+.scroll-text {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.widget__title {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  color: #fff;
+}
+.widget__artist {
+  font-size: 19px;
+  font-weight: 600;
+  /* Couleur accent — remplacée via JS */
+  color: var(--accent, #1db954);
+  margin-top: 2px;
+}
+.widget__album {
+  font-size: 16px;
+  font-weight: 400;
+  color: #b7b7b7;
+  margin-top: 1px;
+}
+
+/* ── Barre de progression ──────────────────────────── */
+.widget__progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.widget__progress-track {
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.2);
+  overflow: hidden;
+}
+.widget__progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 3px;
+  /* Couleur accent — remplacée via JS */
+  background: var(--accent, #1db954);
+  transition: width 1s linear;
+}
+.widget__timer {
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+/* ── Animation défilement texte ────────────────────── */
+@keyframes marquee {
+  0%, 15%  { transform: translateX(0); }
+  55%, 80% { transform: translateX(var(--marquee-offset, 0px)); }
+  100%     { transform: translateX(0); }
+}
+.scroll-text.scrolling {
+  animation: marquee var(--marquee-duration, 8s) ease-in-out infinite;
+}

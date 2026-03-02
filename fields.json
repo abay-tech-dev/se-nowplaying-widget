@@ -1,0 +1,45 @@
+{
+  "username": {
+    "label": "Pseudo Last.fm",
+    "type": "text",
+    "value": ""
+  },
+  "apiKey": {
+    "label": "Clé API Last.fm",
+    "type": "text",
+    "value": ""
+  },
+  "accentColor": {
+    "label": "Couleur accent (artiste, barres, progression)",
+    "type": "colorpicker",
+    "value": "#1db954"
+  },
+  "scale": {
+    "label": "Taille du widget (échelle)",
+    "type": "slider",
+    "value": 1,
+    "min": 0.3,
+    "max": 2.0,
+    "steps": 0.05
+  },
+  "emoteUrl": {
+    "label": "URL de l'emote (image personnalisée)",
+    "type": "text",
+    "value": ""
+  },
+  "showAlbum": {
+    "label": "Afficher le nom de l'album",
+    "type": "checkbox",
+    "value": true
+  },
+  "showTimer": {
+    "label": "Afficher le timer",
+    "type": "checkbox",
+    "value": true
+  },
+  "showProgress": {
+    "label": "Afficher la barre de progression",
+    "type": "checkbox",
+    "value": true
+  }
+}

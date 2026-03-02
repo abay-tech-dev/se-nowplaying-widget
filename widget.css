@@ -187,6 +187,52 @@
   flex-shrink: 0;
 }
 
+/* ── Mode Minimaliste ──────────────────────────────── */
+.widget--minimal {
+  width: 500px;
+  height: 80px;
+  border-radius: 16px;
+  background: rgba(18, 18, 18, 0.92);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+.widget--minimal .widget__bg,
+.widget--minimal .widget__overlay {
+  display: none;
+}
+.widget--minimal .widget__content {
+  padding: 0 16px;
+  gap: 14px;
+}
+.widget--minimal .widget__bars {
+  display: none;
+}
+.widget--minimal .widget__cover {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+}
+.widget--minimal .widget__info {
+  gap: 2px;
+}
+.widget--minimal .widget__title {
+  font-size: 17px;
+  font-weight: 600;
+}
+.widget--minimal .widget__artist {
+  font-size: 13px;
+  margin-top: 2px;
+}
+.widget--minimal .widget__album {
+  display: none;
+}
+.widget--minimal .widget__progress-row {
+  margin-top: 6px;
+}
+.widget--minimal .widget__progress-track {
+  height: 3px;
+  border-radius: 2px;
+}
+
 /* ── Animation défilement texte ────────────────────── */
 @keyframes marquee {
   0%, 15%  { transform: translateX(0); }

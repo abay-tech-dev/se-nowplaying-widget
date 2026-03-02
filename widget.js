@@ -7,6 +7,9 @@
 const POLL_INTERVAL = 10000; // 10 secondes
 const LASTFM_API    = "https://ws.audioscrobbler.com/2.0/";
 
+// ── fieldData (peuplé par les événements SE) ─────────────
+let fieldData = {};
+
 // ── État interne ─────────────────────────────────────────
 let currentTitle   = null;
 let timerInterval  = null;
@@ -147,7 +150,12 @@ async function fetchNowPlaying() {
   const username = fieldData.username || "";
   const apiKey   = fieldData.apiKey   || "";
 
-  if (!username || !apiKey) return;
+  console.log("[NowPlaying] username:", username, "| apiKey:", apiKey ? apiKey.slice(0,6) + "…" : "(vide)");
+
+  if (!username || !apiKey) {
+    console.warn("[NowPlaying] Champs manquants — widget en attente.");
+    return;
+  }
 
   try {
     const url = `${LASTFM_API}?method=user.getrecenttracks`
@@ -159,10 +167,12 @@ async function fetchNowPlaying() {
     const data = await res.json();
 
     const tracks = data?.recenttracks?.track;
+    console.log("[NowPlaying] Réponse API :", JSON.stringify(data).slice(0, 300));
     if (!tracks) { hideWidget(); return; }
 
     const latest = Array.isArray(tracks) ? tracks[0] : tracks;
     const isPlaying = latest?.["@attr"]?.nowplaying === "true";
+    console.log("[NowPlaying] isPlaying:", isPlaying, "| track:", latest?.name);
 
     if (isPlaying) {
       showTrack(latest);
@@ -177,7 +187,7 @@ async function fetchNowPlaying() {
 
 // ── Initialisation StreamElements ────────────────────────
 window.addEventListener("onWidgetLoad", (obj) => {
-  // fieldData est disponible ici
+  fieldData = obj.detail.fieldData;
   applyFieldData();
   fetchNowPlaying();
   setInterval(fetchNowPlaying, POLL_INTERVAL);
@@ -185,6 +195,7 @@ window.addEventListener("onWidgetLoad", (obj) => {
 
 // Quand l'utilisateur change un champ dans l'éditeur SE
 window.addEventListener("onSessionUpdate", (obj) => {
+  fieldData = obj.detail.fieldData;
   applyFieldData();
 });
 

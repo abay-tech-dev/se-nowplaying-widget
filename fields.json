@@ -1,4 +1,13 @@
 {
+  "displayMode": {
+    "label": "Mode d'affichage",
+    "type": "dropdown",
+    "value": "default",
+    "options": {
+      "default": "Complet (par défaut)",
+      "minimal": "Minimaliste"
+    }
+  },
   "username": {
     "label": "Pseudo Last.fm",
     "type": "text",

@@ -130,10 +130,12 @@ function showTrack(track) {
     startTimer();
   }
 
-  // Afficher le widget + barres
+  // Afficher le widget + barres (pas en mode minimaliste)
   $widget.classList.remove("hidden");
   $widget.classList.add("visible");
-  $bars.style.display = "flex";
+  if ((fieldData.displayMode || "default") !== "minimal") {
+    $bars.style.display = "flex";
+  }
 }
 
 // ── Masquage du widget ────────────────────────────────────
@@ -201,6 +203,13 @@ window.addEventListener("onSessionUpdate", (obj) => {
 
 // ── Application des champs configurables ─────────────────
 function applyFieldData() {
+  // Mode d'affichage
+  const displayMode = fieldData.displayMode || "default";
+  $widget.classList.toggle("widget--minimal", displayMode === "minimal");
+  if (displayMode === "minimal") {
+    $bars.style.display = "none";
+  }
+
   // Couleur accent
   const accent = fieldData.accentColor || "#1db954";
   document.documentElement.style.setProperty("--accent", accent);
@@ -236,7 +245,7 @@ function applyFieldData() {
   $bar.parentElement.style.display =
     fieldData.showProgress !== false ? "block" : "none";
 
-  // Afficher / masquer le timer
+  // Afficher / masquer le timer (jamais en mode minimaliste)
   $timer.style.display =
-    fieldData.showTimer !== false ? "inline" : "none";
+    (displayMode !== "minimal" && fieldData.showTimer !== false) ? "inline" : "none";
 }

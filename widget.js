@@ -18,16 +18,17 @@ let durationMs     = 0;
 let progressInterval = null;
 
 // ── Éléments DOM ─────────────────────────────────────────
-const $widget   = document.getElementById("widget");
-const $bg       = document.getElementById("bg");
-const $cover    = document.getElementById("cover");
-const $title    = document.getElementById("title");
-const $artist   = document.getElementById("artist");
-const $album    = document.getElementById("album");
-const $bar      = document.getElementById("progress-bar");
-const $timer    = document.getElementById("timer");
-const $bars     = document.getElementById("audiobars");
-const $emote    = document.getElementById("emote");
+const $widget      = document.getElementById("widget");
+const $bg          = document.getElementById("bg");
+const $cover       = document.getElementById("cover");
+const $title       = document.getElementById("title");
+const $artist      = document.getElementById("artist");
+const $album       = document.getElementById("album");
+const $bar         = document.getElementById("progress-bar");
+const $timer       = document.getElementById("timer");
+const $timerTotal  = document.getElementById("timer-total");
+const $bars        = document.getElementById("audiobars");
+const $emote       = document.getElementById("emote");
 
 // ── Helpers ───────────────────────────────────────────────
 function formatTime(ms) {
@@ -84,10 +85,19 @@ function startTimer() {
   startedAt = Date.now();
 
   timerInterval = setInterval(() => {
-    const elapsed = Date.now() - startedAt;
-    $timer.textContent = durationMs > 0
-      ? `${formatTime(elapsed)} / ${formatTime(durationMs)}`
-      : formatTime(elapsed);
+    const elapsed     = Date.now() - startedAt;
+    const displayMode = fieldData.displayMode || "default";
+
+    if (displayMode === "minimal") {
+      // Mode minimal : temps écoulé à gauche, durée totale à droite
+      $timer.textContent      = formatTime(elapsed);
+      $timerTotal.textContent = durationMs > 0 ? formatTime(durationMs) : "";
+    } else {
+      // Mode complet : "élapsé / total" dans un seul timer
+      $timer.textContent = durationMs > 0
+        ? `${formatTime(elapsed)} / ${formatTime(durationMs)}`
+        : formatTime(elapsed);
+    }
 
     if (durationMs > 0) {
       const pct = Math.min((elapsed / durationMs) * 100, 100);
@@ -100,8 +110,9 @@ function startTimer() {
 function stopTimer() {
   clearInterval(timerInterval);
   clearInterval(progressInterval);
-  $timer.textContent = "0:00";
-  $bar.style.width   = "0%";
+  $timer.textContent      = "0:00";
+  $timerTotal.textContent = "0:00";
+  $bar.style.width        = "0%";
 }
 
 // ── Affichage d'une piste ─────────────────────────────────
@@ -117,13 +128,20 @@ function showTrack(track) {
     currentTitle = title;
     durationMs   = dur;
 
-    $title.textContent  = title;
-    $artist.textContent = artist;
-    $album.textContent  = album;
-
+    $title.textContent = title;
     applyScroll($title);
-    applyScroll($artist);
-    applyScroll($album);
+
+    const displayMode = fieldData.displayMode || "default";
+    if (displayMode === "minimal") {
+      // En mode minimal : artiste • album sur une seule ligne
+      $artist.textContent = album ? `${artist}  •  ${album}` : artist;
+      applyScroll($artist);
+    } else {
+      $artist.textContent = artist;
+      $album.textContent  = album;
+      applyScroll($artist);
+      applyScroll($album);
+    }
 
     updateBg(imgUrl);
     updateCover(imgUrl);
@@ -203,21 +221,34 @@ window.addEventListener("onSessionUpdate", (obj) => {
 
 // ── Application des champs configurables ─────────────────
 function applyFieldData() {
-  // Mode d'affichage
   const displayMode = fieldData.displayMode || "default";
   $widget.classList.toggle("widget--minimal", displayMode === "minimal");
-  if (displayMode === "minimal") {
-    $bars.style.display = "none";
-  }
 
-  // Couleur accent
+  // Couleur accent (s'applique aux deux modes)
   const accent = fieldData.accentColor || "#1db954";
   document.documentElement.style.setProperty("--accent", accent);
 
-  // Taille du widget
+  // Taille (s'applique aux deux modes)
   const scale = parseFloat(fieldData.scale || 1);
-  $widget.style.transform = `scale(${scale})`;
+  $widget.style.transform      = `scale(${scale})`;
   $widget.style.transformOrigin = "top left";
+
+  if (displayMode === "minimal") {
+    // Mode minimaliste — configuration fixe
+    $bars.style.display = "none";
+    $album.parentElement.style.display = "none";
+    $timer.style.display      = "inline";
+    $timerTotal.style.display = "inline";
+    const $progressRow = $bar.closest(".widget__progress-row");
+    if ($progressRow) $progressRow.style.display = "flex";
+    $bar.parentElement.style.display = "block";
+    return;
+  }
+
+  // ── Mode complet — configuration selon les champs ──────
+
+  // Réactiver les barres (effacer l'éventuel style inline du mode minimal)
+  $bars.style.display = "";
 
   // Emote
   const emoteUrl = fieldData.emoteUrl || "";
@@ -245,7 +276,7 @@ function applyFieldData() {
   $bar.parentElement.style.display =
     fieldData.showProgress !== false ? "block" : "none";
 
-  // Afficher / masquer le timer (jamais en mode minimaliste)
-  $timer.style.display =
-    (displayMode !== "minimal" && fieldData.showTimer !== false) ? "inline" : "none";
+  // Afficher / masquer le timer (mode complet seulement)
+  $timer.style.display      = fieldData.showTimer !== false ? "inline" : "none";
+  $timerTotal.style.display = "none";
 }

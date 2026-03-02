@@ -85,19 +85,12 @@ function startTimer() {
   startedAt = Date.now();
 
   timerInterval = setInterval(() => {
-    const elapsed     = Date.now() - startedAt;
-    const displayMode = fieldData.displayMode || "default";
+    const elapsed    = Date.now() - startedAt;
+    const remaining  = durationMs > 0 ? Math.max(durationMs - elapsed, 0) : 0;
 
-    if (displayMode === "minimal") {
-      // Mode minimal : temps écoulé à gauche, durée totale à droite
-      $timer.textContent      = formatTime(elapsed);
-      $timerTotal.textContent = durationMs > 0 ? formatTime(durationMs) : "";
-    } else {
-      // Mode complet : "élapsé / total" dans un seul timer
-      $timer.textContent = durationMs > 0
-        ? `${formatTime(elapsed)} / ${formatTime(durationMs)}`
-        : formatTime(elapsed);
-    }
+    // Temps écoulé à gauche, temps restant (négatif) à droite
+    $timer.textContent      = formatTime(elapsed);
+    $timerTotal.textContent = durationMs > 0 ? `-${formatTime(remaining)}` : "";
 
     if (durationMs > 0) {
       const pct = Math.min((elapsed / durationMs) * 100, 100);
@@ -111,7 +104,7 @@ function stopTimer() {
   clearInterval(timerInterval);
   clearInterval(progressInterval);
   $timer.textContent      = "0:00";
-  $timerTotal.textContent = "0:00";
+  $timerTotal.textContent = "";
   $bar.style.width        = "0%";
 }
 
@@ -277,6 +270,7 @@ function applyFieldData() {
     fieldData.showProgress !== false ? "block" : "none";
 
   // Afficher / masquer le timer (mode complet seulement)
-  $timer.style.display      = fieldData.showTimer !== false ? "inline" : "none";
-  $timerTotal.style.display = "none";
+  const showTimer = fieldData.showTimer !== false;
+  $timer.style.display      = showTimer ? "inline" : "none";
+  $timerTotal.style.display = showTimer ? "inline" : "none";
 }

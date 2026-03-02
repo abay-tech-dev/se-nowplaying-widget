@@ -188,9 +188,9 @@
   letter-spacing: 0.3px;
   flex-shrink: 0;
 }
-/* Timer total — caché par défaut, visible seulement en mode minimal */
+/* Timer total — visible dans les deux modes */
 .widget__timer--total {
-  display: none;
+  display: inline;
 }
 
 /* ── Contrôles de lecture (mode minimaliste uniquement) */
@@ -265,22 +265,18 @@
   margin-top: 5px;
   gap: 6px;
 }
-/* Temps écoulé — passe devant la barre */
+/* Temps écoulé — à gauche de la barre */
 .widget--minimal .widget__timer {
-  order: -1;
   font-size: 10px;
   color: #8c8c8c;
   font-weight: 400;
 }
 .widget--minimal .widget__progress-track {
-  order: 0;
   height: 3px;
   border-radius: 2px;
 }
-/* Durée totale — après la barre */
+/* Temps restant — à droite de la barre */
 .widget--minimal .widget__timer--total {
-  display: inline;
-  order: 1;
   font-size: 10px;
   color: #8c8c8c;
   font-weight: 400;

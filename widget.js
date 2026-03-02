@@ -83,14 +83,18 @@ function startTimer() {
   clearInterval(timerInterval);
   clearInterval(progressInterval);
   startedAt = Date.now();
+  $bar.style.transition = "none";
+  $bar.style.width      = "0%";
+  // Rétablir la transition au prochain frame pour un défilement fluide
+  requestAnimationFrame(() => { $bar.style.transition = ""; });
 
   timerInterval = setInterval(() => {
-    const elapsed    = Date.now() - startedAt;
-    const remaining  = durationMs > 0 ? Math.max(durationMs - elapsed, 0) : 0;
+    const elapsed   = Date.now() - startedAt;
+    const remaining = durationMs > 0 ? Math.max(durationMs - elapsed, 0) : 0;
 
     // Temps écoulé à gauche, temps restant (négatif) à droite
     $timer.textContent      = formatTime(elapsed);
-    $timerTotal.textContent = durationMs > 0 ? `-${formatTime(remaining)}` : "";
+    $timerTotal.textContent = durationMs > 0 ? `-${formatTime(remaining)}` : "--:--";
 
     if (durationMs > 0) {
       const pct = Math.min((elapsed / durationMs) * 100, 100);
@@ -139,6 +143,11 @@ function showTrack(track) {
     updateBg(imgUrl);
     updateCover(imgUrl);
     startTimer();
+
+    // Last.fm ne retourne souvent pas la durée dans getrecenttracks — la récupérer via track.getInfo
+    if (durationMs === 0 && artist && title) {
+      fetchTrackInfo(artist, title);
+    }
   }
 
   // Afficher le widget + barres (pas en mode minimaliste)
@@ -155,6 +164,28 @@ function hideWidget() {
   $widget.classList.remove("visible");
   $widget.classList.add("hidden");
   stopTimer();
+}
+
+// ── Récupération de la durée via track.getInfo ────────────
+async function fetchTrackInfo(artist, title) {
+  const apiKey = fieldData.apiKey || "";
+  if (!apiKey) return;
+  try {
+    const url = `${LASTFM_API}?method=track.getInfo`
+      + `&artist=${encodeURIComponent(artist)}`
+      + `&track=${encodeURIComponent(title)}`
+      + `&api_key=${encodeURIComponent(apiKey)}`
+      + `&format=json`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    const ms   = parseInt(data?.track?.duration || 0, 10);
+    if (ms > 0) {
+      durationMs = ms;
+      console.log("[NowPlaying] Durée récupérée via track.getInfo :", ms, "ms");
+    }
+  } catch (err) {
+    console.error("[NowPlaying] Erreur track.getInfo :", err);
+  }
 }
 
 // ── Appel API Last.fm ─────────────────────────────────────

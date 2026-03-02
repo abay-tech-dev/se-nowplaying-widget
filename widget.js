@@ -143,11 +143,12 @@ function showTrack(track) {
     updateBg(imgUrl);
     updateCover(imgUrl);
     startTimer();
+  }
 
-    // Last.fm ne retourne souvent pas la durée dans getrecenttracks — la récupérer via track.getInfo
-    if (durationMs === 0 && artist && title) {
-      fetchTrackInfo(artist, title);
-    }
+  // Récupérer la durée à chaque poll tant qu'elle est inconnue
+  // (Last.fm retourne souvent duration=0 — on réessaie jusqu'à l'obtenir)
+  if (durationMs === 0 && artist && title) {
+    fetchTrackInfo(artist, title);
   }
 
   // Afficher le widget + barres (pas en mode minimaliste)
@@ -174,14 +175,16 @@ async function fetchTrackInfo(artist, title) {
     const url = `${LASTFM_API}?method=track.getInfo`
       + `&artist=${encodeURIComponent(artist)}`
       + `&track=${encodeURIComponent(title)}`
+      + `&autocorrect=1`
       + `&api_key=${encodeURIComponent(apiKey)}`
       + `&format=json`;
     const res  = await fetch(url);
     const data = await res.json();
+    console.log("[NowPlaying] track.getInfo :", JSON.stringify(data).slice(0, 200));
     const ms   = parseInt(data?.track?.duration || 0, 10);
     if (ms > 0) {
       durationMs = ms;
-      console.log("[NowPlaying] Durée récupérée via track.getInfo :", ms, "ms");
+      console.log("[NowPlaying] Durée récupérée :", ms, "ms");
     }
   } catch (err) {
     console.error("[NowPlaying] Erreur track.getInfo :", err);

@@ -266,10 +266,11 @@
   margin-top: 0;
 }
 
-/* Barre de progression */
+/* Barre de progression — width:100% nécessaire car le parent a align-items:center */
 .widget--minimal .widget__progress-row {
   margin-top: 5px;
   gap: 6px;
+  width: 100%;
 }
 /* Temps écoulé — à gauche de la barre */
 .widget--minimal .widget__timer {

@@ -1,12 +1,19 @@
 {
-  "displayMode": {
-    "label": "Mode d'affichage",
-    "type": "dropdown",
-    "value": "default",
-    "options": {
-      "default": "Complet (par défaut)",
-      "minimal": "Minimaliste"
-    }
+  "_guide_intro": {
+    "label": "── Guide d'installation ──────────────────",
+    "type": "label",
+    "value": "1. Crée un compte sur last.fm (gratuit)\n2. Va sur last.fm/api → Create an API account\n3. Copie ta clé API et entre-la ci-dessous\n4. Entre ton pseudo Last.fm\n5. Lance une musique — le widget apparaît automatiquement !"
+  },
+  "_guide_api": {
+    "label": "Où trouver ta clé API Last.fm ?",
+    "type": "label",
+    "value": "Lien direct : https://www.last.fm/api/account/create\nRubrique : \"API key\" (champ sur la page)"
+  },
+
+  "_sep_config": {
+    "label": "── Configuration ─────────────────────────",
+    "type": "label",
+    "value": ""
   },
   "username": {
     "label": "Pseudo Last.fm",
@@ -17,6 +24,21 @@
     "label": "Clé API Last.fm",
     "type": "text",
     "value": ""
+  },
+
+  "_sep_display": {
+    "label": "── Apparence ─────────────────────────────",
+    "type": "label",
+    "value": ""
+  },
+  "displayMode": {
+    "label": "Mode d'affichage",
+    "type": "dropdown",
+    "value": "default",
+    "options": {
+      "default": "Complet (par défaut)",
+      "minimal": "Minimaliste"
+    }
   },
   "accentColor": {
     "label": "Couleur accent (artiste, barres, progression)",
@@ -32,8 +54,14 @@
     "steps": 0.05
   },
   "emoteUrl": {
-    "label": "URL de l'emote (image personnalisée)",
+    "label": "URL de l'emote (image personnalisée, optionnel)",
     "type": "text",
+    "value": ""
+  },
+
+  "_sep_options": {
+    "label": "── Options (mode Complet uniquement) ─────",
+    "type": "label",
     "value": ""
   },
   "showAlbum": {
@@ -50,5 +78,11 @@
     "label": "Afficher la barre de progression",
     "type": "checkbox",
     "value": true
+  },
+
+  "_guide_support": {
+    "label": "── Besoin d'aide ? ───────────────────────",
+    "type": "label",
+    "value": "Contacte-moi sur Etsy via la messagerie de ta commande."
   }
 }

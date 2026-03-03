@@ -78,21 +78,21 @@ function updateCover(url) {
   }, 200);
 }
 
-// Lance le compteur local de temps écoulé
-function startTimer() {
+// Lance le compteur basé sur l'heure réelle de début du morceau
+// trackStartedAt : timestamp Unix (ms) du début estimé via date.uts Last.fm
+function startTimer(trackStartedAt) {
   clearInterval(timerInterval);
   clearInterval(progressInterval);
-  startedAt = Date.now();
+  // Utilise le timestamp de début récupéré de Last.fm ; sinon Date.now()
+  startedAt = (trackStartedAt > 0) ? trackStartedAt : Date.now();
   $bar.style.transition = "none";
   $bar.style.width      = "0%";
-  // Rétablir la transition au prochain frame pour un défilement fluide
   requestAnimationFrame(() => { $bar.style.transition = ""; });
 
   timerInterval = setInterval(() => {
-    const elapsed   = Date.now() - startedAt;
+    const elapsed   = Math.max(Date.now() - startedAt, 0);
     const remaining = durationMs > 0 ? Math.max(durationMs - elapsed, 0) : 0;
 
-    // Temps écoulé à gauche, temps restant (négatif) à droite
     $timer.textContent      = formatTime(elapsed);
     $timerTotal.textContent = durationMs > 0 ? `-${formatTime(remaining)}` : "--:--";
 
@@ -113,12 +113,13 @@ function stopTimer() {
 }
 
 // ── Affichage d'une piste ─────────────────────────────────
-function showTrack(track) {
+// trackStartedAt : timestamp (ms) du début réel estimé via date.uts du morceau précédent
+function showTrack(track, trackStartedAt) {
   const title  = track.name || "";
   const artist = track.artist?.["#text"] || "";
   const album  = track.album?.["#text"]  || "";
   const imgUrl = track.image?.[3]?.["#text"] || track.image?.[2]?.["#text"] || "";
-  const dur    = parseInt(track.duration || 0, 10) * 1000; // Last.fm donne en secondes
+  const dur    = parseInt(track.duration || 0, 10) * 1000;
 
   // Nouveau morceau ?
   if (title !== currentTitle) {
@@ -130,7 +131,6 @@ function showTrack(track) {
 
     const displayMode = fieldData.displayMode || "default";
     if (displayMode === "minimal") {
-      // En mode minimal : artiste • album sur une seule ligne
       $artist.textContent = album ? `${artist}  •  ${album}` : artist;
       applyScroll($artist);
     } else {
@@ -142,12 +142,13 @@ function showTrack(track) {
 
     updateBg(imgUrl);
     updateCover(imgUrl);
-    startTimer();
+    // Démarrer le timer avec le timestamp réel de début (issu de date.uts Last.fm)
+    startTimer(trackStartedAt);
+  }
 
-    // Last.fm ne retourne souvent pas la durée dans getrecenttracks — la récupérer via track.getInfo
-    if (durationMs === 0 && artist && title) {
-      fetchTrackInfo(artist, title);
-    }
+  // Récupérer la durée à chaque poll tant qu'elle est inconnue
+  if (durationMs === 0 && artist && title) {
+    fetchTrackInfo(artist, title);
   }
 
   // Afficher le widget + barres (pas en mode minimaliste)
@@ -174,14 +175,22 @@ async function fetchTrackInfo(artist, title) {
     const url = `${LASTFM_API}?method=track.getInfo`
       + `&artist=${encodeURIComponent(artist)}`
       + `&track=${encodeURIComponent(title)}`
+      + `&autocorrect=1`
       + `&api_key=${encodeURIComponent(apiKey)}`
       + `&format=json`;
     const res  = await fetch(url);
     const data = await res.json();
-    const ms   = parseInt(data?.track?.duration || 0, 10);
+    console.log("[NowPlaying] track.getInfo :", JSON.stringify(data).slice(0, 200));
+    const ms = parseInt(data?.track?.duration || 0, 10);
     if (ms > 0) {
       durationMs = ms;
-      console.log("[NowPlaying] Durée récupérée via track.getInfo :", ms, "ms");
+      // Snap immédiat de la barre à la position correcte
+      const elapsed = Math.max(Date.now() - startedAt, 0);
+      const pct = Math.min((elapsed / durationMs) * 100, 100);
+      $bar.style.transition = "none";
+      $bar.style.width      = `${pct}%`;
+      requestAnimationFrame(() => { $bar.style.transition = ""; });
+      console.log("[NowPlaying] Durée :", ms, "ms | Élapsé estimé :", Math.round(elapsed / 1000), "s");
     }
   } catch (err) {
     console.error("[NowPlaying] Erreur track.getInfo :", err);
@@ -202,10 +211,11 @@ async function fetchNowPlaying() {
   }
 
   try {
+    // limit=2 : morceau en cours + précédent (son date.uts donne l'heure de début du morceau actuel)
     const url = `${LASTFM_API}?method=user.getrecenttracks`
       + `&user=${encodeURIComponent(username)}`
       + `&api_key=${encodeURIComponent(apiKey)}`
-      + `&format=json&limit=1`;
+      + `&format=json&limit=2`;
 
     const res  = await fetch(url);
     const data = await res.json();
@@ -214,12 +224,20 @@ async function fetchNowPlaying() {
     console.log("[NowPlaying] Réponse API :", JSON.stringify(data).slice(0, 300));
     if (!tracks) { hideWidget(); return; }
 
-    const latest = Array.isArray(tracks) ? tracks[0] : tracks;
+    const tracksArr = Array.isArray(tracks) ? tracks : [tracks];
+    const latest    = tracksArr[0];
     const isPlaying = latest?.["@attr"]?.nowplaying === "true";
     console.log("[NowPlaying] isPlaying:", isPlaying, "| track:", latest?.name);
 
     if (isPlaying) {
-      showTrack(latest);
+      // Le morceau précédent (tracksArr[1]) a été scrobblé à sa FIN,
+      // donc son date.uts ≈ heure de début du morceau actuel
+      const prevUts       = parseInt(tracksArr[1]?.date?.uts || 0, 10);
+      const trackStartedAt = prevUts > 0 ? prevUts * 1000 : 0;
+      if (trackStartedAt > 0) {
+        console.log("[NowPlaying] Début estimé du morceau :", new Date(trackStartedAt).toLocaleTimeString());
+      }
+      showTrack(latest, trackStartedAt);
     } else {
       hideWidget();
     }

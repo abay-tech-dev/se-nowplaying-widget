@@ -241,6 +241,12 @@
 .widget--minimal .widget__info {
   gap: 1px;
   width: 100%;
+  align-items: center;
+}
+
+/* Centrer le texte dans les conteneurs de défilement */
+.widget--minimal .scroll-wrap {
+  text-align: center;
 }
 
 /* Titre — blanc, Medium */

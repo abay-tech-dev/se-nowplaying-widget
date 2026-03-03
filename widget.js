@@ -140,11 +140,11 @@ function showTrack(track) {
     updateBg(imgUrl);
     updateCover(imgUrl);
     startTimer();
-  }
 
-  // Récupérer la durée à chaque poll tant qu'elle est inconnue
-  if (durationMs === 0 && artist && title) {
-    fetchTrackInfo(artist, title);
+    // Récupérer la durée une seule fois par morceau (avec retries internes)
+    if (durationMs === 0 && artist && title) {
+      fetchTrackInfo(artist, title);
+    }
   }
 
   // Afficher le widget + barres (pas en mode minimaliste)
@@ -164,33 +164,51 @@ function hideWidget() {
 }
 
 // ── Récupération de la durée via track.getInfo ────────────
+// Essaie d'abord sans autocorrect (évite les faux matchs),
+// puis avec autocorrect en fallback.
+// Jusqu'à 3 tentatives avec délais croissants.
 async function fetchTrackInfo(artist, title) {
   const apiKey = fieldData.apiKey || "";
   if (!apiKey) return;
-  try {
+
+  const tryOnce = async (autocorrect) => {
     const url = `${LASTFM_API}?method=track.getInfo`
       + `&artist=${encodeURIComponent(artist)}`
       + `&track=${encodeURIComponent(title)}`
-      + `&autocorrect=1`
+      + `&autocorrect=${autocorrect}`
       + `&api_key=${encodeURIComponent(apiKey)}`
       + `&format=json`;
     const res  = await fetch(url);
     const data = await res.json();
-    console.log("[NowPlaying] track.getInfo :", JSON.stringify(data).slice(0, 200));
-    const ms = parseInt(data?.track?.duration || 0, 10);
-    if (ms > 0) {
-      durationMs = ms;
-      // Snap immédiat de la barre à la position correcte
-      const elapsed = Math.max(Date.now() - startedAt, 0);
-      const pct = Math.min((elapsed / durationMs) * 100, 100);
-      $bar.style.transition = "none";
-      $bar.style.width      = `${pct}%`;
-      requestAnimationFrame(() => { $bar.style.transition = ""; });
-      console.log("[NowPlaying] Durée :", ms, "ms | Élapsé estimé :", Math.round(elapsed / 1000), "s");
+    return parseInt(data?.track?.duration || 0, 10);
+  };
+
+  const delays = [0, 5000, 15000]; // immédiat, 5s, 15s
+  for (const delay of delays) {
+    if (delay > 0) await new Promise(r => setTimeout(r, delay));
+    if (currentTitle !== title) return; // morceau changé → arrêt
+
+    try {
+      // 1) Sans autocorrect (match exact → durée fiable)
+      let ms = await tryOnce(0);
+      // 2) Fallback avec autocorrect si durée absente
+      if (ms <= 0) ms = await tryOnce(1);
+
+      if (ms > 0) {
+        durationMs = ms;
+        const elapsed = Math.max(Date.now() - startedAt, 0);
+        const pct = Math.min((elapsed / durationMs) * 100, 100);
+        $bar.style.transition = "none";
+        $bar.style.width      = `${pct}%`;
+        requestAnimationFrame(() => { $bar.style.transition = ""; });
+        console.log("[NowPlaying] Durée :", ms, "ms");
+        return; // succès → stop
+      }
+    } catch (err) {
+      console.error("[NowPlaying] Erreur track.getInfo :", err);
     }
-  } catch (err) {
-    console.error("[NowPlaying] Erreur track.getInfo :", err);
   }
+  console.warn("[NowPlaying] Durée introuvable pour :", title);
 }
 
 // ── Appel API Last.fm ─────────────────────────────────────

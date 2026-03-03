@@ -299,6 +299,29 @@
   margin-top: 7px;
 }
 
+/* ── Réactions Chat ────────────────────────────────── */
+.widget__react-zone {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  overflow: hidden;
+}
+.react-emote {
+  position: absolute;
+  bottom: 12px;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  animation: react-float 2.8s ease-out forwards;
+}
+@keyframes react-float {
+  0%   { transform: translateY(0)     scale(0.4) rotate(-8deg); opacity: 0; }
+  15%  { transform: translateY(-18px) scale(1.2) rotate(4deg);  opacity: 1; }
+  40%  { transform: translateY(-50px) scale(1.0) rotate(-2deg); opacity: 1; }
+  100% { transform: translateY(-130px) scale(0.8) rotate(6deg); opacity: 0; }
+}
+
 /* ── Animation défilement texte ────────────────────── */
 @keyframes marquee {
   0%, 15%  { transform: translateX(0); }

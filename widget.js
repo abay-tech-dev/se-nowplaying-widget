@@ -19,6 +19,7 @@ let progressInterval = null;
 
 // ── Éléments DOM ─────────────────────────────────────────
 const $widget      = document.getElementById("widget");
+const $reactZone   = document.getElementById("react-zone");
 const $bg          = document.getElementById("bg");
 const $cover       = document.getElementById("cover");
 const $title       = document.getElementById("title");
@@ -251,6 +252,40 @@ async function fetchNowPlaying() {
     console.error("[NowPlaying] Erreur API Last.fm :", err);
   }
 }
+
+// ── Réactions Chat ────────────────────────────────────
+const MAX_REACTIONS = 8;
+let activeReactions = 0;
+
+function spawnReaction() {
+  const url = (fieldData.reactEmoteUrl || "").trim();
+  if (!url || activeReactions >= MAX_REACTIONS) return;
+
+  activeReactions++;
+  const img = document.createElement("img");
+  img.src       = url;
+  img.className = "react-emote";
+  img.style.left = `${8 + Math.random() * 80}%`;
+  $reactZone.appendChild(img);
+
+  img.addEventListener("animationend", () => {
+    img.remove();
+    activeReactions--;
+  });
+}
+
+window.addEventListener("onEventReceived", (obj) => {
+  if (!fieldData.reactEnabled) return;
+
+  const { listener, event } = obj.detail;
+  if (listener !== "message") return;
+
+  const text    = (event.data.text || "").toLowerCase();
+  const trigger = (fieldData.reactCommand || "!react").trim().toLowerCase();
+  if (!trigger || !text.includes(trigger)) return;
+
+  spawnReaction();
+});
 
 // ── Initialisation StreamElements ────────────────────────
 window.addEventListener("onWidgetLoad", (obj) => {

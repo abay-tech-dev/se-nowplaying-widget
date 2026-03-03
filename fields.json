@@ -80,6 +80,27 @@
     "value": true
   },
 
+  "_sep_react": {
+    "label": "── Réactions Chat ────────────────────────",
+    "type": "label",
+    "value": "Quand un viewer tape la commande dans le chat, un emote apparaît sur le widget et monte en flottant."
+  },
+  "reactEnabled": {
+    "label": "Activer les réactions chat",
+    "type": "checkbox",
+    "value": true
+  },
+  "reactCommand": {
+    "label": "Commande déclencheur (ex: !react, PogChamp...)",
+    "type": "text",
+    "value": "!react"
+  },
+  "reactEmoteUrl": {
+    "label": "URL de l'emote réaction",
+    "type": "text",
+    "value": ""
+  },
+
   "_guide_support": {
     "label": "── Besoin d'aide ? ───────────────────────",
     "type": "label",

@@ -170,7 +170,7 @@ function hideWidget() {
 // puis avec autocorrect en fallback.
 // Jusqu'à 3 tentatives avec délais croissants.
 async function fetchTrackInfo(artist, title) {
-  const apiKey = fieldData.apiKey || "";
+  const apiKey = (fieldData.apiKey || "").trim();
   if (!apiKey) return;
 
   const tryOnce = async (autocorrect) => {
@@ -216,8 +216,8 @@ async function fetchTrackInfo(artist, title) {
 // ── Appel API Last.fm ─────────────────────────────────────
 async function fetchNowPlaying() {
   // fieldData est injecté par StreamElements
-  const username = fieldData.username || "";
-  const apiKey   = fieldData.apiKey   || "";
+  const username = (fieldData.username || "").trim();
+  const apiKey   = (fieldData.apiKey   || "").trim();
 
   console.log("[NowPlaying] username:", username, "| apiKey:", apiKey ? apiKey.slice(0,6) + "…" : "(vide)");
 

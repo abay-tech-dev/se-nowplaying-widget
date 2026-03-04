@@ -322,6 +322,34 @@
   100% { transform: translateY(-130px) scale(0.8) rotate(6deg); opacity: 0; }
 }
 
+/* ── Message de setup (identifiants manquants) ─────── */
+.setup-msg {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid var(--accent, #1db954);
+  border-radius: 12px;
+  padding: 18px 24px;
+  text-align: center;
+  color: #fff;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  max-width: 380px;
+  width: 90%;
+  z-index: 9999;
+}
+.setup-msg.hidden { display: none; }
+.setup-msg__icon  { font-size: 2rem; display: block; margin-bottom: 8px; }
+.setup-msg__title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--accent, #1db954);
+}
+.setup-msg__text  { font-size: 0.82rem; margin: 0; line-height: 1.5; }
+.setup-msg__text strong { color: var(--accent, #1db954); }
+
 /* ── Animation défilement texte ────────────────────── */
 @keyframes marquee {
   0%, 15%  { transform: translateX(0); }

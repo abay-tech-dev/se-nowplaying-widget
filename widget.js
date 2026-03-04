@@ -30,6 +30,7 @@ const $timer       = document.getElementById("timer");
 const $timerTotal  = document.getElementById("timer-total");
 const $bars        = document.getElementById("audiobars");
 const $emote       = document.getElementById("emote");
+const $setupMsg    = document.getElementById("setup-msg");
 
 // ── Helpers ───────────────────────────────────────────────
 function formatTime(ms) {
@@ -222,8 +223,10 @@ async function fetchNowPlaying() {
 
   if (!username || !apiKey) {
     console.warn("[NowPlaying] Champs manquants — widget en attente.");
+    $setupMsg.classList.remove("hidden");
     return;
   }
+  $setupMsg.classList.add("hidden");
 
   try {
     const url = `${LASTFM_API}?method=user.getrecenttracks`

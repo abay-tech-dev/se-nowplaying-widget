@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Now Playing Widget</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+    /* ── Reset ─────────────────────────────────────────── */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ── Widget principal ──────────────────────────────── */
+    .widget {
+      width: 800px;
+      height: 200px;
+      position: relative;
+      border-radius: 40px;
+      overflow: hidden;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      color: #fff;
+      background: #181818;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .widget.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+    }
+    .widget.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    /* ── Fond flouté ───────────────────────────────────── */
+    .widget__bg {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background-size: cover;
+      background-position: center;
+      filter: blur(15px) brightness(0.35);
+      transition: background-image 0.8s ease;
+    }
+    .widget__overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    /* ── Contenu ───────────────────────────────────────── */
+    .widget__content {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      height: 100%;
+      padding: 0 34px;
+      gap: 20px;
+    }
+
+    /* ── Emote ─────────────────────────────────────────── */
+    .widget__emote {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      display: none;
+    }
+    .widget__emote.active {
+      display: block;
+    }
+
+    /* ── Barres audio ──────────────────────────────────── */
+    .widget__bars {
+      flex-shrink: 0;
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 28px;
+    }
+    .bar {
+      display: block;
+      width: 4px;
+      background: var(--accent, #1db954);
+      border-radius: 2px;
+    }
+    .bar1 { animation: bar1 0.8s ease-in-out infinite; }
+    .bar2 { animation: bar2 0.8s ease-in-out infinite 0.15s; }
+    .bar3 { animation: bar3 0.8s ease-in-out infinite 0.30s; }
+    .bar4 { animation: bar4 0.8s ease-in-out infinite 0.45s; }
+
+    @keyframes bar1 { 0%,100%{height:5px}  50%{height:22px} }
+    @keyframes bar2 { 0%,100%{height:14px} 50%{height:5px}  }
+    @keyframes bar3 { 0%,100%{height:9px}  50%{height:24px} }
+    @keyframes bar4 { 0%,100%{height:20px} 50%{height:7px}  }
+
+    /* ── Pochette ──────────────────────────────────────── */
+    .widget__cover-wrap {
+      flex-shrink: 0;
+    }
+    .widget__cover {
+      width: 130px;
+      height: 130px;
+      border-radius: 16px;
+      object-fit: cover;
+      display: block;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.55);
+      transition: opacity 0.4s ease;
+    }
+
+    /* ── Infos piste ───────────────────────────────────── */
+    .widget__info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 3px;
+    }
+
+    .scroll-wrap {
+      overflow: hidden;
+      width: 100%;
+    }
+    .scroll-text {
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .widget__title {
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+      color: #fff;
+    }
+    .widget__artist {
+      font-size: 19px;
+      font-weight: 600;
+      color: var(--accent, #1db954);
+      margin-top: 2px;
+    }
+    .widget__album {
+      font-size: 16px;
+      font-weight: 400;
+      color: #b7b7b7;
+      margin-top: 1px;
+    }
+
+    /* ── Barre de progression ──────────────────────────── */
+    .widget__progress-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .widget__progress-track {
+      flex: 1;
+      height: 5px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.2);
+      overflow: hidden;
+    }
+    .widget__progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 3px;
+      background: var(--accent, #1db954);
+      transition: width 1s linear;
+    }
+    .widget__timer {
+      font-size: 13px;
+      color: rgba(255,255,255,0.75);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.3px;
+      flex-shrink: 0;
+    }
+    .widget__timer--total {
+      display: inline;
+    }
+
+    /* ── Contrôles de lecture (mode minimaliste uniquement) */
+    .widget__minimal-controls {
+      display: none;
+    }
+    .widget__ctrl {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      cursor: default;
+    }
+    .widget__ctrl--play {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* ── Mode Minimaliste ──────────────────────────────── */
+    .widget--minimal {
+      width: 300px;
+      height: 100px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .widget--minimal .widget__bg,
+    .widget--minimal .widget__overlay,
+    .widget--minimal .widget__emote,
+    .widget--minimal .widget__bars,
+    .widget--minimal .widget__cover-wrap,
+    .widget--minimal .widget__album {
+      display: none;
+    }
+
+    .widget--minimal .widget__content {
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: center;
+      padding: 12px 16px;
+      gap: 0;
+    }
+
+    .widget--minimal .widget__info {
+      gap: 1px;
+      width: 100%;
+      align-items: center;
+    }
+
+    .widget--minimal .scroll-wrap {
+      text-align: center;
+    }
+
+    .widget--minimal .widget__title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #ffffff;
+      letter-spacing: 0;
+      line-height: 1.3;
+    }
+
+    .widget--minimal .widget__artist {
+      font-size: 11px;
+      font-weight: 400;
+      color: #8c8c8c;
+      margin-top: 0;
+    }
+
+    .widget--minimal .widget__progress-row {
+      margin-top: 5px;
+      gap: 6px;
+      width: 100%;
+    }
+    .widget--minimal .widget__timer {
+      font-size: 10px;
+      color: #8c8c8c;
+      font-weight: 400;
+    }
+    .widget--minimal .widget__progress-track {
+      height: 3px;
+      border-radius: 2px;
+    }
+    .widget--minimal .widget__timer--total {
+      font-size: 10px;
+      color: #8c8c8c;
+      font-weight: 400;
+    }
+
+    .widget--minimal .widget__minimal-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+      width: 100%;
+      margin-top: 7px;
+    }
+
+    /* ── Réactions Chat ────────────────────────────────── */
+    .widget__react-zone {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .react-emote {
+      position: absolute;
+      bottom: 12px;
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+      animation: react-float 2.8s ease-out forwards;
+    }
+    @keyframes react-float {
+      0%   { transform: translateY(0)     scale(0.4) rotate(-8deg); opacity: 0; }
+      15%  { transform: translateY(-18px) scale(1.2) rotate(4deg);  opacity: 1; }
+      40%  { transform: translateY(-50px) scale(1.0) rotate(-2deg); opacity: 1; }
+      100% { transform: translateY(-130px) scale(0.8) rotate(6deg); opacity: 0; }
+    }
+
+    /* ── Animation défilement texte ────────────────────── */
+    @keyframes marquee {
+      0%, 15%  { transform: translateX(0); }
+      55%, 80% { transform: translateX(var(--marquee-offset, 0px)); }
+      100%     { transform: translateX(0); }
+    }
+    .scroll-text.scrolling {
+      animation: marquee var(--marquee-duration, 8s) ease-in-out infinite;
+    }
+  </style>
+</head>
+<body style="background:transparent;">
+
+  <div id="widget" class="widget hidden">
+
+    <!-- Fond flouté (image de couverture) -->
+    <div id="bg" class="widget__bg"></div>
+    <!-- Overlay sombre -->
+    <div class="widget__overlay"></div>
+
+    <!-- Contenu principal -->
+    <div class="widget__content">
+
+      <!-- Emote personnalisable -->
+      <img id="emote" class="widget__emote" src="" alt="" />
+
+      <!-- Barres audio animées -->
+      <div id="audiobars" class="widget__bars">
+        <span class="bar bar1"></span>
+        <span class="bar bar2"></span>
+        <span class="bar bar3"></span>
+        <span class="bar bar4"></span>
+      </div>
+
+      <!-- Pochette album -->
+      <div class="widget__cover-wrap">
+        <img id="cover" class="widget__cover" src="" alt="cover" />
+      </div>
+
+      <!-- Infos piste -->
+      <div class="widget__info">
+        <div class="scroll-wrap">
+          <span id="title" class="widget__title scroll-text"></span>
+        </div>
+        <div class="scroll-wrap">
+          <span id="artist" class="widget__artist scroll-text"></span>
+        </div>
+        <div class="scroll-wrap">
+          <span id="album" class="widget__album scroll-text"></span>
+        </div>
+
+        <!-- Barre de progression + timer -->
+        <div class="widget__progress-row">
+          <span id="timer" class="widget__timer">0:00</span>
+          <div class="widget__progress-track">
+            <div id="progress-bar" class="widget__progress-fill"></div>
+          </div>
+          <span id="timer-total" class="widget__timer widget__timer--total">-0:00</span>
+        </div>
+      </div>
+
+      <!-- Contrôles de lecture (mode minimaliste uniquement) -->
+      <div id="minimal-controls" class="widget__minimal-controls">
+        <svg class="widget__ctrl" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <rect x="5" y="6" width="2.5" height="12" rx="1" fill="white"/>
+          <path d="M18 6 L8 12 L18 18 Z" fill="white"/>
+        </svg>
+        <svg class="widget__ctrl widget__ctrl--play" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="11" fill="white"/>
+          <path d="M9.5 7.5 L9.5 16.5 L17.5 12 Z" fill="black"/>
+        </svg>
+        <svg class="widget__ctrl" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <rect x="16.5" y="6" width="2.5" height="12" rx="1" fill="white"/>
+          <path d="M6 6 L16 12 L6 18 Z" fill="white"/>
+        </svg>
+      </div>
+
+    </div>
+
+    <!-- Zone de réactions chat (emotes flottants) -->
+    <div id="react-zone" class="widget__react-zone"></div>
+
+  </div>
+
+  <script>
+    /* ─────────────────────────────────────────────────────────
+       StreamElements - Last.fm Now Playing Widget
+       Hébergé sur GitHub Pages — code non accessible depuis SE
+    ───────────────────────────────────────────────────────── */
+
+    const POLL_INTERVAL = 10000;
+    const LASTFM_API    = "https://ws.audioscrobbler.com/2.0/";
+
+    // ── Paramètres passés via l'URL ───────────────────────
+    // Exemple : index.html?username=TON_PSEUDO&apiKey=TA_CLE&accentColor=%231db954
+    const _params       = new URLSearchParams(window.location.search);
+
+    let fieldData = {
+      username    : _params.get("username")    || "",
+      apiKey      : _params.get("apiKey")      || "",
+      displayMode : _params.get("displayMode") || "default",
+      accentColor : _params.get("accentColor") || "#1db954",
+      scale       : parseFloat(_params.get("scale") || "1"),
+      emoteUrl    : _params.get("emoteUrl")    || "",
+      showAlbum   : _params.get("showAlbum")   !== "false",
+      showTimer   : _params.get("showTimer")   !== "false",
+      showProgress: _params.get("showProgress") !== "false",
+      reactEnabled: _params.get("reactEnabled") !== "false",
+      reactCommand: _params.get("reactCommand") || "!react",
+      reactEmoteUrl: _params.get("reactEmoteUrl") || "",
+    };
+
+    let currentTitle   = null;
+    let timerInterval  = null;
+    let startedAt      = null;
+    let durationMs     = 0;
+    let progressInterval = null;
+
+    const $widget      = document.getElementById("widget");
+    const $reactZone   = document.getElementById("react-zone");
+    const $bg          = document.getElementById("bg");
+    const $cover       = document.getElementById("cover");
+    const $title       = document.getElementById("title");
+    const $artist      = document.getElementById("artist");
+    const $album       = document.getElementById("album");
+    const $bar         = document.getElementById("progress-bar");
+    const $timer       = document.getElementById("timer");
+    const $timerTotal  = document.getElementById("timer-total");
+    const $bars        = document.getElementById("audiobars");
+    const $emote       = document.getElementById("emote");
+
+    function formatTime(ms) {
+      const s = Math.floor(ms / 1000);
+      return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+    }
+
+    function applyScroll(spanEl) {
+      spanEl.classList.remove("scrolling");
+      spanEl.style.removeProperty("--marquee-offset");
+      spanEl.style.removeProperty("--marquee-duration");
+      setTimeout(() => {
+        const container = spanEl.parentElement;
+        if (!container) return;
+        const overflow = spanEl.offsetWidth - container.clientWidth;
+        if (overflow > 2) {
+          spanEl.style.setProperty("--marquee-offset", `-${overflow}px`);
+          spanEl.style.setProperty("--marquee-duration", `${Math.max(overflow / 50, 3) + 4}s`);
+          spanEl.classList.add("scrolling");
+        }
+      }, 80);
+    }
+
+    function updateBg(url) {
+      if (!url) return;
+      const img = new Image();
+      img.onload = () => { $bg.style.backgroundImage = `url(${url})`; };
+      img.src = url;
+    }
+
+    function updateCover(url) {
+      if (!url) { $cover.src = ""; return; }
+      $cover.style.opacity = 0;
+      setTimeout(() => {
+        $cover.src = url;
+        $cover.onload = () => { $cover.style.opacity = 1; };
+      }, 200);
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      clearInterval(progressInterval);
+      startedAt = Date.now();
+      $bar.style.transition = "none";
+      $bar.style.width      = "0%";
+      requestAnimationFrame(() => { $bar.style.transition = ""; });
+
+      timerInterval = setInterval(() => {
+        const elapsed   = Math.max(Date.now() - startedAt, 0);
+        const remaining = durationMs > 0 ? Math.max(durationMs - elapsed, 0) : 0;
+        $timer.textContent      = formatTime(elapsed);
+        $timerTotal.textContent = durationMs > 0 ? `-${formatTime(remaining)}` : "--:--";
+        if (durationMs > 0) {
+          const pct = Math.min((elapsed / durationMs) * 100, 100);
+          $bar.style.width = `${pct}%`;
+        }
+      }, 500);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      clearInterval(progressInterval);
+      $timer.textContent      = "0:00";
+      $timerTotal.textContent = "";
+      $bar.style.width        = "0%";
+    }
+
+    function showTrack(track) {
+      const title  = track.name || "";
+      const artist = track.artist?.["#text"] || "";
+      const album  = track.album?.["#text"]  || "";
+      const imgUrl = track.image?.[3]?.["#text"] || track.image?.[2]?.["#text"] || "";
+      const dur    = parseInt(track.duration || 0, 10) * 1000;
+
+      if (title !== currentTitle) {
+        currentTitle = title;
+        durationMs   = dur;
+
+        $title.textContent = title;
+        applyScroll($title);
+
+        const displayMode = fieldData.displayMode || "default";
+        if (displayMode === "minimal") {
+          $artist.textContent = album ? `${artist}  •  ${album}` : artist;
+          applyScroll($artist);
+        } else {
+          $artist.textContent = artist;
+          $album.textContent  = album;
+          applyScroll($artist);
+          applyScroll($album);
+        }
+
+        updateBg(imgUrl);
+        updateCover(imgUrl);
+        startTimer();
+
+        if (durationMs === 0 && artist && title) {
+          fetchTrackInfo(artist, title);
+        }
+      }
+
+      $widget.classList.remove("hidden");
+      $widget.classList.add("visible");
+      if ((fieldData.displayMode || "default") !== "minimal") {
+        $bars.style.display = "flex";
+      }
+    }
+
+    function hideWidget() {
+      currentTitle = null;
+      $widget.classList.remove("visible");
+      $widget.classList.add("hidden");
+      stopTimer();
+    }
+
+    async function fetchTrackInfo(artist, title) {
+      const apiKey = fieldData.apiKey || "";
+      if (!apiKey) return;
+
+      const tryOnce = async (autocorrect) => {
+        const url = `${LASTFM_API}?method=track.getInfo`
+          + `&artist=${encodeURIComponent(artist)}`
+          + `&track=${encodeURIComponent(title)}`
+          + `&autocorrect=${autocorrect}`
+          + `&api_key=${encodeURIComponent(apiKey)}`
+          + `&format=json`;
+        const res  = await fetch(url);
+        const data = await res.json();
+        return parseInt(data?.track?.duration || 0, 10);
+      };
+
+      const delays = [0, 5000, 15000];
+      for (const delay of delays) {
+        if (delay > 0) await new Promise(r => setTimeout(r, delay));
+        if (currentTitle !== title) return;
+        try {
+          let ms = await tryOnce(0);
+          if (ms <= 0) ms = await tryOnce(1);
+          if (ms > 0) {
+            durationMs = ms;
+            const elapsed = Math.max(Date.now() - startedAt, 0);
+            const pct = Math.min((elapsed / durationMs) * 100, 100);
+            $bar.style.transition = "none";
+            $bar.style.width      = `${pct}%`;
+            requestAnimationFrame(() => { $bar.style.transition = ""; });
+            return;
+          }
+        } catch (err) {
+          console.error("[NowPlaying] Erreur track.getInfo :", err);
+        }
+      }
+    }
+
+    async function fetchNowPlaying() {
+      const username = fieldData.username || "";
+      const apiKey   = fieldData.apiKey   || "";
+      if (!username || !apiKey) return;
+
+      try {
+        const url = `${LASTFM_API}?method=user.getrecenttracks`
+          + `&user=${encodeURIComponent(username)}`
+          + `&api_key=${encodeURIComponent(apiKey)}`
+          + `&format=json&limit=1`;
+        const res  = await fetch(url);
+        const data = await res.json();
+        const tracks = data?.recenttracks?.track;
+        if (!tracks) { hideWidget(); return; }
+        const latest    = Array.isArray(tracks) ? tracks[0] : tracks;
+        const isPlaying = latest?.["@attr"]?.nowplaying === "true";
+        if (isPlaying) { showTrack(latest); } else { hideWidget(); }
+      } catch (err) {
+        console.error("[NowPlaying] Erreur API Last.fm :", err);
+      }
+    }
+
+    function applyFieldData() {
+      const displayMode = fieldData.displayMode || "default";
+      $widget.classList.toggle("widget--minimal", displayMode === "minimal");
+
+      const accent = fieldData.accentColor || "#1db954";
+      document.documentElement.style.setProperty("--accent", accent);
+
+      const scale = parseFloat(fieldData.scale || 1);
+      $widget.style.transform       = `scale(${scale})`;
+      $widget.style.transformOrigin = "top left";
+
+      if (displayMode === "minimal") {
+        $bars.style.display = "none";
+        $album.parentElement.style.display = "none";
+        $timer.style.display      = "inline";
+        $timerTotal.style.display = "inline";
+        const $progressRow = $bar.closest(".widget__progress-row");
+        if ($progressRow) $progressRow.style.display = "flex";
+        $bar.parentElement.style.display = "block";
+        return;
+      }
+
+      $bars.style.display = "";
+
+      const emoteUrl = fieldData.emoteUrl || "";
+      if (emoteUrl) {
+        $emote.src = emoteUrl;
+        $emote.classList.add("active");
+      } else {
+        $emote.src = "";
+        $emote.classList.remove("active");
+      }
+
+      $album.parentElement.style.display =
+        fieldData.showAlbum !== false ? "block" : "none";
+
+      const $progressRow = $bar.closest(".widget__progress-row");
+      if ($progressRow) {
+        $progressRow.style.display =
+          (fieldData.showProgress !== false || fieldData.showTimer !== false)
+            ? "flex" : "none";
+      }
+
+      $bar.parentElement.style.display =
+        fieldData.showProgress !== false ? "block" : "none";
+
+      const showTimer = fieldData.showTimer !== false;
+      $timer.style.display      = showTimer ? "inline" : "none";
+      $timerTotal.style.display = showTimer ? "inline" : "none";
+    }
+
+    // ── Réactions Chat ─────────────────────────────────────
+    const MAX_REACTIONS = 8;
+    let activeReactions = 0;
+
+    function spawnReaction() {
+      const url = (fieldData.reactEmoteUrl || "").trim();
+      if (!url || activeReactions >= MAX_REACTIONS) return;
+      activeReactions++;
+      const img = document.createElement("img");
+      img.src       = url;
+      img.className = "react-emote";
+      img.style.left = `${8 + Math.random() * 80}%`;
+      $reactZone.appendChild(img);
+      img.addEventListener("animationend", () => {
+        img.remove();
+        activeReactions--;
+      });
+    }
+
+    // ── Compatibilité StreamElements (si utilisé en SE aussi) ──
+    window.addEventListener("onWidgetLoad", (obj) => {
+      fieldData = { ...fieldData, ...obj.detail.fieldData };
+      applyFieldData();
+      fetchNowPlaying();
+      setInterval(fetchNowPlaying, POLL_INTERVAL);
+    });
+
+    window.addEventListener("onSessionUpdate", (obj) => {
+      fieldData = { ...fieldData, ...obj.detail.fieldData };
+      applyFieldData();
+    });
+
+    window.addEventListener("onEventReceived", (obj) => {
+      if (!fieldData.reactEnabled) return;
+      const { listener, event } = obj.detail;
+      if (listener !== "message") return;
+      const text    = (event.data.text || "").toLowerCase();
+      const trigger = (fieldData.reactCommand || "!react").trim().toLowerCase();
+      if (!trigger || !text.includes(trigger)) return;
+      spawnReaction();
+    });
+
+    // ── Démarrage autonome (hors StreamElements) ──────────
+    if (!window.StreamElements) {
+      applyFieldData();
+      fetchNowPlaying();
+      setInterval(fetchNowPlaying, POLL_INTERVAL);
+    }
+  </script>
+</body>
+</html>
